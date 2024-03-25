@@ -28,7 +28,9 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
 import com.firebase.ui.auth.AuthUI
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import de.janmeckelholt.firebase_login_sample.databinding.FragmentMainBinding
 import timber.log.Timber
@@ -51,9 +53,7 @@ class MainFragment : Fragment() {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false)
         registerLauncher()
 
-        // TODO Remove the two lines below once observeAuthenticationState is implemented.
-        binding.welcomeText.text = viewModel.getFactToDisplay(requireContext())
-        binding.authButton.text = getString(R.string.login_btn)
+
 
         return binding.root
     }
@@ -62,9 +62,7 @@ class MainFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         observeAuthenticationState()
 
-        binding.authButton.setOnClickListener {
-            launchSignInFlow()
-        }
+
     }
 
     /**
@@ -74,17 +72,31 @@ class MainFragment : Fragment() {
      */
     private fun observeAuthenticationState() {
         val factToDisplay = viewModel.getFactToDisplay(requireContext())
+        viewModel.authenticationState.observe(viewLifecycleOwner, Observer { authenticationState ->
+            when (authenticationState) {
+                LoginViewModel.AuthenticationState.AUTHENTICATED -> {
+                    binding.authButton.text = getString(R.string.logout_button_text)
+                    binding.authButton.setOnClickListener{
+                        AuthUI.getInstance().signOut(requireContext())
+                    }
+                    binding.welcomeText.text = getFactWithPersonalization(factToDisplay)
+                }
+                LoginViewModel.AuthenticationState.UNAUTHENTICATED -> {
+                    binding.authButton.text = getString(R.string.login_btn)
+                    binding.authButton.setOnClickListener {
+                        launchSignInFlow()
+                    }
+                    binding.welcomeText.text = factToDisplay
+                }
+                else -> {
+                    Snackbar.make(binding.root, "Error: Undefined Login State!", Snackbar.LENGTH_INDEFINITE)
+                        .setAction("Exit") {
+                            activity?.finishAndRemoveTask()
+                        }.show()
+                }
+            }
+        })
 
-        // TODO Use the authenticationState variable from LoginViewModel to update the UI
-        //  accordingly.
-        //
-        //  TODO If there is a logged-in user, authButton should display Logout. If the
-        //   user is logged in, you can customize the welcome message by utilizing
-        //   getFactWithPersonalition(). I
-
-        // TODO If there is no logged in user, authButton should display Login and launch the sign
-        //  in screen when clicked. There should also be no personalization of the message
-        //  displayed.
     }
 
 
