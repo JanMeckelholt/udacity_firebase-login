@@ -33,13 +33,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
         setPreferencesFromResource(R.xml.settings, rootKey)
     }
 
+
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewModel.authenticationState.observe(viewLifecycleOwner, Observer {authentictionState ->
-            when (authentictionState) {
+        viewModel.authenticationState.observe(viewLifecycleOwner, Observer {authenticationState ->
+            when (authenticationState) {
                 LoginViewModel.AuthenticationState.AUTHENTICATED -> Timber.i("Authenticteed")
                 LoginViewModel.AuthenticationState.UNAUTHENTICATED -> findNavController().navigate(R.id.loginFragment)
-                else -> Timber.e("New $authentictionState state that does not require any UI change")
+                else -> Timber.e("New $authenticationState state that does not require any UI change")
             }
         })
     }

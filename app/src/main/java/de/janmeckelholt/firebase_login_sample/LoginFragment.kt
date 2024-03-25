@@ -30,6 +30,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.navigation.fragment.findNavController
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
 
 import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuth
@@ -43,7 +44,6 @@ class LoginFragment : Fragment() {
         val providers = arrayListOf(AuthUI.IdpConfig.EmailBuilder().build(), AuthUI.IdpConfig.GoogleBuilder().build())
     }
 
-    // Get a reference to the ViewModel scoped to this Fragment.
     private val viewModel by viewModels<LoginViewModel>()
 
 
@@ -66,6 +66,12 @@ class LoginFragment : Fragment() {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
             findNavController().popBackStack(R.id.mainFragment, false)
         }
+        viewModel.authenticationState.observe(viewLifecycleOwner, Observer {authenticationState ->
+            when (authenticationState){
+                LoginViewModel.AuthenticationState.AUTHENTICATED -> findNavController().popBackStack()
+                else -> Timber.e("New $authenticationState state that does not require any UI change")
+            }
+        })
 
     }
 
