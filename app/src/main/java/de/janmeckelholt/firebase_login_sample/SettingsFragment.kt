@@ -19,13 +19,12 @@ package de.janmeckelholt.firebase_login_sample
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
+import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceFragmentCompat
+import timber.log.Timber
 
 class SettingsFragment : PreferenceFragmentCompat() {
-
-    companion object {
-        const val TAG = "SettingsFragment"
-    }
 
     // Get a reference to the ViewModel scoped to this Fragment
     private val viewModel by viewModels<LoginViewModel>()
@@ -36,5 +35,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        viewModel.authenticationState.observe(viewLifecycleOwner, Observer {authentictionState ->
+            when (authentictionState) {
+                LoginViewModel.AuthenticationState.AUTHENTICATED -> Timber.i("Authenticteed")
+                LoginViewModel.AuthenticationState.UNAUTHENTICATED -> findNavController().navigate(R.id.loginFragment)
+                else -> Timber.e("New $authentictionState state that does not require any UI change")
+            }
+        })
     }
 }
