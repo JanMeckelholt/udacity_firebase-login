@@ -16,22 +16,29 @@
 
 package de.janmeckelholt.firebase_login_sample
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
+import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuth
 import de.janmeckelholt.firebase_login_sample.databinding.FragmentMainBinding
+import timber.log.Timber
 
 class MainFragment : Fragment() {
 
+    private lateinit var activityResultLauncher: ActivityResultLauncher<Intent>
+
     companion object {
-        const val TAG = "MainFragment"
-        const val SIGN_IN_RESULT_CODE = 1001
+        val providers = arrayListOf(AuthUI.IdpConfig.EmailBuilder().build(), AuthUI.IdpConfig.GoogleBuilder().build())
     }
 
     // Get a reference to the ViewModel scoped to this Fragment
@@ -42,6 +49,7 @@ class MainFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false)
+        registerLauncher()
 
         // TODO Remove the two lines below once observeAuthenticationState is implemented.
         binding.welcomeText.text = viewModel.getFactToDisplay(requireContext())
@@ -55,15 +63,8 @@ class MainFragment : Fragment() {
         observeAuthenticationState()
 
         binding.authButton.setOnClickListener {
-            // TODO call launchSignInFlow when authButton is clicked
+            launchSignInFlow()
         }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        // TODO Listen to the result of the sign in process by filter for when
-        //  SIGN_IN_REQUEST_CODE is passed back. Start by having log statements to know
-        //  whether the user has signed in successfully
     }
 
     /**
@@ -97,8 +98,27 @@ class MainFragment : Fragment() {
         )
     }
 
+    private fun registerLauncher() {
+        activityResultLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result: ActivityResult ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                // User successfully signed in
+                Timber.i("Successfully signed in user ${FirebaseAuth.getInstance().currentUser?.displayName}!")
+            } else {
+                Timber.i("Sign in unsuccessful: ${result.data}")
+            }
+
+        }
+    }
+
     private fun launchSignInFlow() {
-        // TODO Complete this function by allowing users to register and sign in with
-        //  either their email address or Google account.
+        activityResultLauncher.launch(
+            AuthUI.getInstance()
+                .createSignInIntentBuilder()
+                .setIsSmartLockEnabled(false)
+                .setAvailableProviders(providers)
+                .build()
+        )
     }
 }
